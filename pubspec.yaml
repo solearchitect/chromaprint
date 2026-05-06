@@ -1,7 +1,6 @@
 name: chromaprint
 description: "Dart FFI bindings for the Chromaprint audio fingerprinting library (AcoustID)."
 version: 0.1.0
-publisher: assoz.org
 repository: https://github.com/solearchitect/chromaprint
 
 environment:
