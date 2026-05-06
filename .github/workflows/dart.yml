@@ -47,6 +47,26 @@ jobs:
 
   publish:
     needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       id-token: write # Required for authentication using OIDC
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+
+    steps:
+      # Checkout WITHOUT submodules — the git submodule source is not
+      # needed for publishing and its .gitignore triggers pub validation
+      # warnings (checked-in Makefiles that are gitignored).
+      - uses: actions/checkout@v4
+
+      # Remove the gitlinked submodule entry from the index so that
+      # dart pub publish doesn't see checked-in files that are gitignored.
+      - name: Remove submodule reference from git index
+        run: git rm --cached chromaprint
+
+      - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Publish to pub.dev
+        run: dart pub publish --force
