@@ -1,95 +1,158 @@
 # chromaprint
 
-A new Flutter FFI plugin project.
+Dart FFI bindings for [Chromaprint](https://github.com/acoustid/chromaprint), the audio fingerprinting library used by [AcoustID](https://acoustid.org/).
 
-## Getting Started
+Generates compact fingerprints from raw PCM audio data that can be used to identify recordings via the AcoustID database.
 
-This project is a starting point for a Flutter
-[FFI plugin](https://flutter.dev/to/ffi-package),
-a specialized package that includes native code directly invoked with Dart FFI.
+## Supported platforms
 
-## Project structure
+| Platform | Status |
+|----------|--------|
+| Android  | Yes    |
+| Linux    | Yes    |
+| iOS      | Planned |
+| macOS    | Planned |
+| Windows  | Planned |
 
-This template uses the following structure:
+## Usage
 
-* `src`: Contains the native source code, and a CmakeFile.txt file for building
-  that source code into a dynamic library.
+### Basic fingerprinting
 
-* `lib`: Contains the Dart code that defines the API of the plugin, and which
-  calls into the native code using `dart:ffi`.
+```dart
+import 'package:chromaprint/chromaprint.dart';
 
-* platform folders (`android`, `ios`, `windows`, etc.): Contains the build files
-  for building and bundling the native code library with the platform application.
+void main() {
+  final cp = Chromaprint();
+  cp.start(44100, 1); // 44.1 kHz, mono
 
-## Building and bundling native code
+  // Feed raw PCM samples (16-bit signed integers, native byte order).
+  // For stereo, channels are interleaved (L, R, L, R, ...).
+  cp.feed(audioData);
 
-The `pubspec.yaml` specifies FFI plugins as follows:
+  cp.finish();
 
-```yaml
-  plugin:
-    platforms:
-      some_platform:
-        ffiPlugin: true
+  // Compressed fingerprint (base64, ready for AcoustID)
+  final fingerprint = cp.getFingerprint();
+
+  // 32-bit hash for quick comparison
+  final hash = cp.getFingerprintHash();
+
+  cp.dispose();
+}
 ```
 
-This configuration invokes the native build for the various target platforms
-and bundles the binaries in Flutter applications using these FFI plugins.
+### Encoding / decoding fingerprints
 
-This can be combined with dartPluginClass, such as when FFI is used for the
-implementation of one platform in a federated plugin:
+```dart
+// Get raw fingerprint data
+final raw = cp.getRawFingerprint();
 
-```yaml
-  plugin:
-    implements: some_other_plugin
-    platforms:
-      some_platform:
-        dartPluginClass: SomeClass
-        ffiPlugin: true
+// Encode to a compressed base64 string
+final encoded = encodeFingerprint(raw, ChromaprintAlgorithm.defaultAlgorithm);
+
+// Decode back to raw data
+final decoded = decodeFingerprint(encoded);
+print(decoded.algorithm);        // ChromaprintAlgorithm.test2
+print(decoded.rawFingerprint);   // List<int>
+
+// Compute a 32-bit hash of raw fingerprint data
+final hash = hashFingerprint(raw);
 ```
 
-A plugin can have both FFI and method channels:
+### Getting the library version
 
-```yaml
-  plugin:
-    platforms:
-      some_platform:
-        pluginClass: SomeName
-        ffiPlugin: true
+```dart
+final version = getVersion(); // e.g. "1.6.0"
 ```
 
-The native build systems that are invoked by FFI (and method channel) plugins are:
+## API reference
 
-* For Android: Gradle, which invokes the Android NDK for native builds.
-  * See the documentation in android/build.gradle.
-* For iOS and MacOS: Xcode, via CocoaPods.
-  * See the documentation in ios/chromaprint.podspec.
-  * See the documentation in macos/chromaprint.podspec.
-* For Linux and Windows: CMake.
-  * See the documentation in linux/CMakeLists.txt.
-  * See the documentation in windows/CMakeLists.txt.
+### `Chromaprint` class
 
-## Binding to native code
+High-level wrapper around the Chromaprint C library.
 
-To use the native code, bindings in Dart are needed.
-To avoid writing these by hand, they are generated from the header file
-(`src/chromaprint.h`) by `package:ffigen`.
-Regenerate the bindings by running `dart run ffigen --config ffigen.yaml`.
+| Method / Property | Description |
+|---|---|
+| `Chromaprint({algorithm})` | Create a new fingerprinter instance. |
+| `algorithm` | The algorithm used by this instance. |
+| `sampleRate` | Configured sample rate (after `start`). |
+| `numChannels` | Configured channel count (after `start`). |
+| `setOption(name, value)` | Set an option (e.g. `"silence_threshold"`). Must be called before `start`. |
+| `start(sampleRate, numChannels)` | Begin the fingerprinting process. |
+| `feed(data)` | Feed 16-bit signed integer PCM samples. |
+| `feedRaw(ptr, size)` | Feed samples from a native pointer. |
+| `finish()` | Complete the fingerprinting process. |
+| `getFingerprint()` | Get the compressed base64 fingerprint string. |
+| `getRawFingerprint()` | Get the raw fingerprint as `List<int>`. |
+| `getRawFingerprintSize()` | Number of elements in the raw fingerprint. |
+| `getFingerprintHash()` | 32-bit hash of the fingerprint. |
+| `clearFingerprint()` | Clear fingerprint data to reuse the instance. |
+| `dispose()` | Release native resources. |
 
-## Invoking native code
+### Top-level functions
 
-Very short-running native functions can be directly invoked from any isolate.
-For example, see `sum` in `lib/chromaprint.dart`.
+| Function | Description |
+|---|---|
+| `getVersion()` | Returns the chromaprint library version string. |
+| `encodeFingerprint(raw, algorithm, {base64})` | Encode raw fingerprint data to compressed format. |
+| `decodeFingerprint(encoded, {base64})` | Decode a compressed fingerprint to raw data. |
+| `hashFingerprint(raw)` | Compute a 32-bit hash of raw fingerprint data. |
 
-Longer-running functions should be invoked on a helper isolate to avoid
-dropping frames in Flutter applications.
-For example, see `sumAsync` in `lib/chromaprint.dart`.
+### `ChromaprintAlgorithm` enum
 
-## Flutter help
+| Value | Description |
+|---|---|
+| `test1` | Algorithm test variant 1 |
+| `test2` | **Default**. Recommended for general use. |
+| `test3` | Algorithm test variant 3 |
+| `test4` | Algorithm test variant 4 |
+| `test5` | Algorithm test variant 5 |
 
-For help getting started with Flutter, view our
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Development setup
 
-The plugin project was generated without specifying the `--platforms` flag, so no platforms are currently supported.
-To add platforms, run `flutter create -t plugin_ffi --platforms <platforms> .` in this directory.
-You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/to/pubspec-plugin-platforms.
+### Prerequisites
+
+- Flutter SDK >= 3.3.0
+- Dart SDK >= 3.11.4
+- CMake >= 3.10
+- A C/C++ toolchain for your target platform
+
+### Clone with submodule
+
+```sh
+git clone --recurse-submodules <repo-url>
+```
+
+If you already cloned without `--recurse-submodules`:
+
+```sh
+git submodule init
+git submodule update
+```
+
+### Build the example app
+
+```sh
+cd example
+flutter run
+```
+
+The example app generates a fingerprint from a synthetic 440 Hz sine wave and displays the result.
+
+### Regenerate FFI bindings
+
+The low-level bindings in `lib/chromaprint_bindings_generated.dart` are generated by `package:ffigen`. You need `chromaprint.h` installed on your system (e.g. `libchromaprint-dev` on Debian/Ubuntu, `chromaprint` on Arch Linux).
+
+```sh
+dart run ffigen --config ffigen.yaml
+```
+
+### How it works
+
+The native library is compiled directly from the Chromaprint source in the `chromaprint/` git submodule. The build is configured in `src/CMakeLists.txt` and uses:
+
+- **KissFFT** (bundled with Chromaprint) for FFT computation
+- **Internal avresample** for audio resampling
+- No external dependencies beyond the C/C++ standard library and `libm`
+
+The `src/config.h` header provides build configuration (version, FFT backend, etc.) that replaces the autoconf-generated header from the upstream Chromaprint build system.
