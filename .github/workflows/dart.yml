@@ -63,7 +63,10 @@ jobs:
       - name: Remove submodule reference from git index
         run: git rm --cached chromaprint
 
-      - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.x"
+          channel: "stable"
 
       - name: Install dependencies
         run: flutter pub get
