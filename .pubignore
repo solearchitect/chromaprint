@@ -1,0 +1,6 @@
+# Chromaprint source is a git submodule, not needed in the published package.
+# The native library is compiled from this source at build time.
+chromaprint/
+
+# Build artifacts
+build/
