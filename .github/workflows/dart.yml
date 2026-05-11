@@ -3,9 +3,9 @@ name: Dart
 on:
   push:
     branches: ["main"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+**"]
   pull_request:
     branches: ["main"]
-  # Allow manual trigger for publishing.
   workflow_dispatch:
 
 jobs:
@@ -48,9 +48,9 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
-      id-token: write # Required for authentication using OIDC
+      id-token: write # Required for OIDC authentication to pub.dev
 
     steps:
       # Checkout WITHOUT submodules — the git submodule source is not
@@ -58,18 +58,27 @@ jobs:
       # warnings (checked-in Makefiles that are gitignored).
       - uses: actions/checkout@v4
 
-      # Remove the gitlinked submodule entry from the index so that
-      # dart pub publish doesn't see checked-in files that are gitignored.
-      - name: Remove submodule reference from git index
-        run: git rm --cached chromaprint
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.x"
           channel: "stable"
 
+      # Obtain a GitHub OIDC token and configure it for pub.dev.
+      # This is needed because flutter pub publish doesn't integrate
+      # with dart-lang/setup-dart's OIDC flow.
+      # See: https://github.com/dart-lang/setup-dart/issues/68
+      - name: Get OIDC token for pub.dev
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let pub_token = await core.getIDToken('https://pub.dev');
+            core.exportVariable('PUB_TOKEN', pub_token);
+
+      - name: Authenticate with pub.dev
+        run: flutter pub token add https://pub.dev --env-var PUB_TOKEN
+
       - name: Install dependencies
         run: flutter pub get
 
       - name: Publish to pub.dev
-        run: flutter pub publish --force
+        run: flutter pub publish --force --ignore-warnings
