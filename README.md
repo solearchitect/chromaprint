@@ -9,9 +9,9 @@ Generates compact fingerprints from raw PCM audio data that can be used to ident
 | Platform | Status |
 |----------|--------|
 | Android  | Yes    |
+| iOS      | Yes    |
 | Linux    | Yes    |
-| iOS      | Planned |
-| macOS    | Planned |
+| macOS    | Yes    |
 | Windows  | Planned |
 
 ## Usage

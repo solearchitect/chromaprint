@@ -48,7 +48,10 @@ enum ChromaprintAlgorithm {
 /// When a function returns 0, this exception is thrown with a description
 /// of the failed operation.
 class ChromaprintException implements Exception {
+  /// A human-readable description of the error.
   final String message;
+
+  /// Creates a [ChromaprintException] with the given [message].
   const ChromaprintException(this.message);
 
   @override
@@ -110,6 +113,8 @@ class DecodedFingerprint {
   /// The algorithm that was used to generate the fingerprint.
   final ChromaprintAlgorithm algorithm;
 
+  /// Creates a [DecodedFingerprint] with the given [rawFingerprint] data
+  /// and [algorithm].
   DecodedFingerprint(this.rawFingerprint, this.algorithm);
 }
 
