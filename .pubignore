@@ -2,6 +2,11 @@
 # The native library is compiled from this source at build time.
 chromaprint/
 
-
 # Build artifacts
 build/
+
+# IDE files
+*.iml
+
+# Example app (not needed in published package)
+example/
