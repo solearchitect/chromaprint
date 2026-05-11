@@ -4,31 +4,46 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'chromaprint'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter FFI plugin project.'
+  s.version          = '0.1.2'
+  s.summary          = 'Dart FFI bindings for the Chromaprint audio fingerprinting library.'
   s.description      = <<-DESC
-A new Flutter FFI plugin project.
+Wraps the Chromaprint C++ library (AcoustID) for audio fingerprinting
+via Dart FFI. Generates compact fingerprints from raw PCM audio data
+that can be used to identify audio recordings.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/solearchitect/chromaprint'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
 
-  # This will ensure the source files in Classes/ are included in the native
-  # builds of apps using this FFI plugin. Podspec does not support relative
-  # paths, so Classes contains a forwarder C file that relatively imports
-  # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
 
-  # If your plugin requires a privacy manifest, for example if it collects user
-  # data, update the PrivacyInfo.xcprivacy file to describe your plugin's
-  # privacy impact, and then uncomment this line. For more information,
-  # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'chromaprint_privacy' => ['Resources/PrivacyInfo.xcprivacy']}
+  # ── Source files from the chromaprint git submodule ──────────
+  s.source_files =
+    '../chromaprint/src/*.cpp',
+    '../chromaprint/src/utils/*.cpp',
+    '../chromaprint/src/avresample/*.c',
+    '../chromaprint/src/3rdparty/kissfft/kiss_fft.c',
+    '../chromaprint/src/3rdparty/kissfft/kiss_fftr.c'
+
+  s.exclude_files =
+    '../chromaprint/src/*_test.cpp',
+    '../chromaprint/src/fft_lib_avfft.cpp',
+    '../chromaprint/src/fft_lib_avtx.cpp',
+    '../chromaprint/src/fft_lib_fftw3.cpp',
+    '../chromaprint/src/fft_lib_vdsp.cpp',
+    '../chromaprint/src/cmd/**/*'
+
+  s.public_header_files = '../chromaprint/src/chromaprint.h'
+
+  # ── Compiler & linker settings ───────────────────────────────
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+    'CLANG_CXX_LIBRARY' => 'libc++',
+    'GCC_PREPROCESSOR_DEFINITIONS' => 'HAVE_CONFIG_H=1 CHROMAPRINT_API_EXPORTS=1 USE_KISSFFT=1 USE_INTERNAL_AVRESAMPLE=1 _SCL_SECURE_NO_WARNINGS=1 __STDC_LIMIT_MACROS __STDC_CONSTANT_MACROS',
+    'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/chromaprint/../src" "$(PODS_ROOT)/chromaprint/../chromaprint/src" "$(PODS_ROOT)/chromaprint/../chromaprint/src/3rdparty/kissfft"',
+  }
 
   s.dependency 'FlutterMacOS'
-
   s.platform = :osx, '10.11'
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
-  s.swift_version = '5.0'
 end

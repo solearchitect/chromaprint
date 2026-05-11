@@ -85,12 +85,11 @@ ffi.DynamicLibrary _openLibrary() {
       '(e.g. libchromaprint-dev on Debian/Ubuntu, chromaprint on Arch Linux).',
     );
   }
-  if (Platform.isMacOS || Platform.isIOS) {
-    try {
-      return ffi.DynamicLibrary.open('lib$_libName.dylib');
-    } catch (_) {
-      return ffi.DynamicLibrary.open('$_libName.framework/$_libName');
-    }
+  if (Platform.isIOS || Platform.isMacOS) {
+    // On iOS and macOS, the native code is statically linked into the
+    // app binary by CocoaPods. Use DynamicLibrary.process() to access
+    // the exported symbols directly from the global symbol table.
+    return ffi.DynamicLibrary.process();
   }
   if (Platform.isWindows) {
     return ffi.DynamicLibrary.open('$_libName.dll');
