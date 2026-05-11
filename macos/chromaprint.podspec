@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'chromaprint'
-  s.version          = '0.1.2'
+  s.version          = '0.2.0'
   s.summary          = 'Dart FFI bindings for the Chromaprint audio fingerprinting library.'
   s.description      = <<-DESC
 Wraps the Chromaprint C++ library (AcoustID) for audio fingerprinting
