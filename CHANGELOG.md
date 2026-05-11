@@ -1,3 +1,7 @@
+## 0.1.1
+
+* Fix pub.dev invalid changelog format.
+
 ## 0.1.0
 
 * Initial release of Dart FFI bindings for Chromaprint.
