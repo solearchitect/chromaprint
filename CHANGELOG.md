@@ -1,3 +1,7 @@
+## 0.1.2
+
+* Fix CI publish workflow: remove incompatible `--ignore-warnings` flag.
+
 ## 0.1.1
 
 * Fix pub.dev invalid changelog format.
